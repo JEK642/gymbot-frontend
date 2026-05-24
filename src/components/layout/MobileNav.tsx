@@ -45,28 +45,60 @@ const navItems = [
 
 export function MobileNav() {
   return (
-    <nav className="
-      lg:hidden fixed bottom-0 left-0 right-0 z-50
-      bg-[#0D0E14]/95 backdrop-blur-md
-      border-t border-[#181B26]
-      flex items-center justify-around
-      px-2 pt-3 pb-6
-    ">
+    <nav
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-2"
+      style={{
+        background: 'rgba(10,11,15,0.92)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        paddingTop: 10,
+        paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+      }}
+    >
       {navItems.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
           end={item.exact}
-          className={({ isActive }) => `
-            flex flex-col items-center gap-1.5 px-6 py-1
-            transition-colors duration-150
-            ${isActive ? 'text-accent' : 'text-element-muted'}
-          `}
+          style={({ isActive }) => ({
+            display: 'flex',
+            flexDirection: 'column' as const,
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 24px',
+            color: isActive ? '#4B8EFF' : 'rgba(255,255,255,0.25)',
+            textDecoration: 'none',
+            transition: 'color 0.15s',
+            position: 'relative' as const,
+          })}
         >
           {({ isActive }) => (
             <>
+              {/* Active indicator dot above icon */}
+              {isActive && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -1,
+                    width: 16,
+                    height: 2,
+                    borderRadius: 99,
+                    background: '#4B8EFF',
+                    boxShadow: '0 0 6px rgba(75,142,255,0.7)',
+                  }}
+                />
+              )}
               {item.icon(isActive)}
-              <span className="text-[10px] font-mono tracking-wider">
+              <span
+                style={{
+                  fontSize: 9,
+                  fontFamily: "'Fira Code', monospace",
+                  fontWeight: isActive ? 700 : 400,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 {item.label}
               </span>
             </>

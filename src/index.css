@@ -27,9 +27,9 @@
   --color-outline-blue: #2B4080;
 
   /* Status / Signal Colors */
-  --color-signal-high: #FF5C5C;
-  --color-signal-medium: #FF9F43;
-  --color-signal-low: #2ED87F;
+  --color-signal-high: #FF453A;
+  --color-signal-medium: #EF9F27;
+  --color-signal-low: #34C759;
   --color-signal-neutral: #4B8EFF;
 
   /* Typography */
@@ -40,12 +40,6 @@
   /* Border Radius */
   --radius-card: 14px;
   --radius-pill: 999px;
-
-  /* Animations */
-  --animate-fade-in: fadeIn 0.3s ease-out;
-  --animate-slide-up: slideUp 0.35s ease-out;
-  --animate-slide-in: slideIn 0.3s ease-out;
-  --animate-pulse-blue: pulseBlue 2.5s infinite;
 }
 
 /* ── Keyframes ───────────────────────────────── */
@@ -55,18 +49,36 @@
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(-8px); }
+  from { opacity: 0; transform: translateX(-6px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 
+/* Pulse variants */
 @keyframes pulseBlue {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
+  50%       { opacity: 0.3; }
+}
+
+@keyframes pulseGreen {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(52,199,89,0.6); }
+  50%       { opacity: 0.45; box-shadow: 0 0 2px rgba(52,199,89,0.2); }
+}
+
+/* Number counter — attach to a span wrapping a number */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Shimmer for skeleton loading */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
 }
 
 /* ── Base Reset ───────────────────────────────── */
@@ -88,16 +100,20 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(75,142,255,0.05) 0%, transparent 60%);
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(75,142,255,0.04) 0%, transparent 60%);
   }
 
-  ::-webkit-scrollbar       { width: 3px; }
+  ::-webkit-scrollbar       { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     background: #1E2235;
     border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb:hover { background: #2A3050; }
+
+  /* Hide scrollbar on filter rows (overflow-x: auto) but keep scrollable */
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 /* ── Component Utilities ─────────────────────── */
@@ -108,12 +124,12 @@
     border: 1px solid #181B26;
     border-radius: 14px;
     padding: 1.375rem 1.5rem;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-    transition: border-color 0.15s;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
+    transition: border-color 0.15s ease;
   }
 
   .card:hover {
-    border-color: #2A3050;
+    border-color: #22273A;
   }
 
   .card-accent {
@@ -122,9 +138,9 @@
     border-radius: 14px;
     padding: 1.375rem 1.5rem;
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.03),
-      0 0 0 1px rgba(75,142,255,0.08),
-      0 4px 20px rgba(75,142,255,0.05);
+      inset 0 1px 0 rgba(255,255,255,0.025),
+      0 0 0 1px rgba(75,142,255,0.06),
+      0 4px 24px rgba(75,142,255,0.04);
   }
 
   .label-xs {
@@ -155,7 +171,7 @@
   }
 
   .blue-glow {
-    box-shadow: 0 0 20px rgba(75,142,255,0.1);
+    box-shadow: 0 0 20px rgba(75,142,255,0.08);
   }
 
   .divider {
@@ -170,12 +186,46 @@
   .hover-row:hover {
     background-color: #161921;
   }
+
+  /* Skeleton shimmer — add to any placeholder element */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #181B26 25%,
+      #1E2235 50%,
+      #181B26 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+    border-radius: 6px;
+  }
+
+  /* Animated number — wrap number text in this class */
+  .num-appear {
+    animation: countUp 0.4s cubic-bezier(0.4,0,0.2,1) both;
+  }
 }
 
-/* ── Animation Delay Utilities ───────────────── */
+/* ── Animation Utilities ─────────────────────── */
 @layer utilities {
+  .animate-fade-in   { animation: fadeIn  0.3s ease-out both; }
+  .animate-slide-up  { animation: slideUp 0.35s ease-out both; }
+  .animate-slide-in  { animation: slideIn 0.3s ease-out both; }
+  .animate-pulse-blue  { animation: pulseBlue  2.5s ease-in-out infinite; }
+  .animate-pulse-green { animation: pulseGreen 2.5s ease-in-out infinite; }
+
+  .delay-75  { animation-delay:  75ms; }
   .delay-100 { animation-delay: 100ms; }
+  .delay-150 { animation-delay: 150ms; }
   .delay-200 { animation-delay: 200ms; }
   .delay-300 { animation-delay: 300ms; }
   .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  /* Stagger children — apply to parent, children get delay via nth-child */
+  .stagger-children > *:nth-child(1) { animation-delay:  50ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 100ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 150ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 250ms; }
 }
