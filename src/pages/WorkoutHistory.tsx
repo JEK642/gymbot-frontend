@@ -18,9 +18,19 @@ const SPLIT_VALUE_MAP: Record<string, string[]> = {
   'Legs':        ['legs'],
   'Upper':       ['upper'],
   'Lower':       ['lower'],
-  'Full Body':   ['fullbody', 'full body', 'full_body'],
+  'Full Body':   ['fullbody', 'full body', 'full_body', 'full'],
   'Tanpa Split': ['none', 'tanpa split', 'tanpasplit', ''],
 };
+
+// Extract split type dari nama sesi — format bot: "PULL — 24/5/2026"
+// Ambil kata pertama sebelum " —" atau " -", lalu lowercase
+function extractSplitFromName(name: string | null | undefined): string {
+  if (!name) return '';
+  // Coba split by " —" atau " -" lalu ambil bagian pertama
+  const part = name.split(/\s+[—-]/)[0].trim().toLowerCase();
+  // Handle "full body" sebagai dua kata
+  return part;
+}
 
 const DATE_FILTERS = [
   { label: 'Semua', value: 'all' },
@@ -118,7 +128,10 @@ export function WorkoutHistory() {
         if (sessionDate < cutoff) return false;
       }
       if (splitFilter !== 'All') {
-        const type = (s.split_name ?? s.name ?? '').toLowerCase().trim();
+        // Coba split_name dulu, fallback ke parse dari kolom name (format: "PULL — 24/5/2026")
+        const type = s.split_name
+          ? s.split_name.toLowerCase().trim()
+          : extractSplitFromName(s.name);
         const allowed = SPLIT_VALUE_MAP[splitFilter] ?? [];
         if (!allowed.includes(type)) return false;
       }
