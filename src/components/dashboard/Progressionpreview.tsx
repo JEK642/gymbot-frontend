@@ -1,4 +1,9 @@
+import { useEffect, useState } from "react";
 import { LineChart, Line, ResponsiveContainer, Tooltip, YAxis, type TooltipContentProps } from "recharts";
+import { supabase } from "../../lib/supabase";
+
+// ⚠️ Ganti dengan Telegram ID kamu
+const MY_TELEGRAM_ID = 8041376316;
 
 interface LiftDataPoint {
   week: string;
@@ -14,60 +19,95 @@ interface LiftSeries {
   delta: number;
 }
 
-const mockLifts: LiftSeries[] = [
-  {
-    name: "Bench Press",
-    unit: "kg",
-    currentMax: 102.5,
-    delta: 7.5,
-    color: "#4B8EFF",
-    data: [
-      { week: "W1", weight: 85 },
-      { week: "W2", weight: 87.5 },
-      { week: "W3", weight: 90 },
-      { week: "W4", weight: 90 },
-      { week: "W5", weight: 95 },
-      { week: "W6", weight: 97.5 },
-      { week: "W7", weight: 100 },
-      { week: "W8", weight: 102.5 },
-    ],
-  },
-  {
-    name: "Squat",
-    unit: "kg",
-    currentMax: 140,
-    delta: 15,
-    color: "#5DCAA5",
-    data: [
-      { week: "W1", weight: 110 },
-      { week: "W2", weight: 115 },
-      { week: "W3", weight: 117.5 },
-      { week: "W4", weight: 120 },
-      { week: "W5", weight: 125 },
-      { week: "W6", weight: 130 },
-      { week: "W7", weight: 135 },
-      { week: "W8", weight: 140 },
-    ],
-  },
-  {
-    name: "Deadlift",
-    unit: "kg",
-    currentMax: 175,
-    delta: 20,
-    color: "#EF9F27",
-    data: [
-      { week: "W1", weight: 140 },
-      { week: "W2", weight: 145 },
-      { week: "W3", weight: 150 },
-      { week: "W4", weight: 155 },
-      { week: "W5", weight: 157.5 },
-      { week: "W6", weight: 162.5 },
-      { week: "W7", weight: 170 },
-      { week: "W8", weight: 175 },
-    ],
-  },
-];
+// Warna per exercise (bisa ditambah)
+const LIFT_COLORS: Record<string, string> = {
+  default0: "#4B8EFF",
+  default1: "#5DCAA5",
+  default2: "#EF9F27",
+  default3: "#FF6B6B",
+  default4: "#C77DFF",
+};
 
+// ─── Hook fetch dari Supabase ─────────────────────────────
+function useProgressionData(telegramId: number) {
+  const [lifts, setLifts] = useState<LiftSeries[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      // Ambil 8 minggu ke belakang
+      const since = new Date();
+      since.setDate(since.getDate() - 56);
+
+      const { data: records, error } = await supabase
+        .from("personal_records")
+        .select(`
+          weight_kg,
+          achieved_at,
+          exercises ( name )
+        `)
+        .eq("telegram_id", telegramId)
+        .gte("achieved_at", since.toISOString())
+        .order("achieved_at", { ascending: true });
+
+      if (error || !records || records.length === 0) {
+        setLifts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Kelompokkan per exercise
+      const grouped: Record<string, { weight: number; date: string }[]> = {};
+      for (const r of records) {
+        const name = (r.exercises as any)?.name ?? "Unknown";
+        if (!grouped[name]) grouped[name] = [];
+        grouped[name].push({ weight: r.weight_kg, date: r.achieved_at });
+      }
+
+      // Format ke LiftSeries
+      const result: LiftSeries[] = Object.entries(grouped).map(
+        ([name, entries], idx) => {
+          // Kelompokkan per minggu
+          const byWeek: Record<string, number> = {};
+          for (const e of entries) {
+            const d = new Date(e.date);
+            const weekNum = `W${Math.ceil(
+              (d.getDate() + new Date(d.getFullYear(), d.getMonth(), 1).getDay()) / 7
+            )}`;
+            byWeek[weekNum] = Math.max(byWeek[weekNum] ?? 0, e.weight);
+          }
+
+          const data: LiftDataPoint[] = Object.entries(byWeek).map(
+            ([week, weight]) => ({ week, weight })
+          );
+
+          const weights = entries.map((e) => e.weight);
+          const currentMax = Math.max(...weights);
+          const firstWeight = weights[0] ?? currentMax;
+          const delta = Number((currentMax - firstWeight).toFixed(1));
+
+          return {
+            name,
+            unit: "kg",
+            data,
+            color: LIFT_COLORS[`default${idx}`] ?? "#4B8EFF",
+            currentMax,
+            delta,
+          };
+        }
+      );
+
+      setLifts(result);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, [telegramId]);
+
+  return { lifts, loading };
+}
+
+// ─── Mini Tooltip ─────────────────────────────────────────
 const MiniTooltip = ({
   active,
   payload,
@@ -91,7 +131,7 @@ const MiniTooltip = ({
             fontWeight: 600,
           }}
         >
-          {payload[0]?.value ?? '-'} kg
+          {payload[0]?.value ?? "-"} kg
         </span>
       </div>
     );
@@ -99,18 +139,12 @@ const MiniTooltip = ({
   return null;
 };
 
-interface LiftCardProps {
-  lift: LiftSeries;
-}
-
-function LiftCard({ lift }: LiftCardProps) {
+// ─── Lift Card ────────────────────────────────────────────
+function LiftCard({ lift }: { lift: LiftSeries }) {
   const isPositive = lift.delta >= 0;
 
   return (
-    <div
-      className="card flex flex-col gap-3 p-4"
-      style={{ minWidth: 0 }}
-    >
+    <div className="card flex flex-col gap-3 p-4" style={{ minWidth: 0 }}>
       <div className="flex items-start justify-between gap-2">
         <div>
           <p
@@ -184,7 +218,10 @@ function LiftCard({ lift }: LiftCardProps) {
         </div>
         <div style={{ flex: 1, height: "48px", minWidth: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={lift.data} margin={{ top: 4, right: 0, left: 0, bottom: 4 }}>
+            <LineChart
+              data={lift.data}
+              margin={{ top: 4, right: 0, left: 0, bottom: 4 }}
+            >
               <YAxis domain={["dataMin - 5", "dataMax + 5"]} hide />
               <Line
                 type="monotone"
@@ -207,13 +244,51 @@ function LiftCard({ lift }: LiftCardProps) {
   );
 }
 
-interface ProgressionPreviewProps {
-  lifts?: LiftSeries[];
+// ─── Empty State ──────────────────────────────────────────
+function EmptyProgression() {
+  return (
+    <div
+      className="card p-6"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "10px",
+        minHeight: "140px",
+      }}
+    >
+      <span style={{ fontSize: "32px" }}>📈</span>
+      <p
+        style={{
+          color: "rgba(255,255,255,0.25)",
+          fontFamily: "'Outfit', sans-serif",
+          fontSize: "13px",
+          margin: 0,
+          textAlign: "center",
+        }}
+      >
+        Belum ada personal record
+      </p>
+      <p
+        style={{
+          color: "rgba(255,255,255,0.15)",
+          fontFamily: "'Fira Code', monospace",
+          fontSize: "11px",
+          margin: 0,
+          textAlign: "center",
+        }}
+      >
+        PR otomatis tercatat saat kamu log workout via bot
+      </p>
+    </div>
+  );
 }
 
-export default function ProgressionPreview({
-  lifts = mockLifts,
-}: ProgressionPreviewProps) {
+// ─── Main Component ───────────────────────────────────────
+export default function ProgressionPreview() {
+  const { lifts, loading } = useProgressionData(MY_TELEGRAM_ID);
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -252,11 +327,33 @@ export default function ProgressionPreview({
         </button>
       </div>
 
-      <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
-        {lifts.map((lift) => (
-          <LiftCard key={lift.name} lift={lift} />
-        ))}
-      </div>
+      {loading ? (
+        // Loading skeleton
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="card p-4"
+              style={{
+                height: "110px",
+                background: "rgba(255,255,255,0.02)",
+                animation: "pulse 1.5s ease-in-out infinite",
+              }}
+            />
+          ))}
+        </div>
+      ) : lifts.length === 0 ? (
+        <EmptyProgression />
+      ) : (
+        <div
+          className="grid gap-3"
+          style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}
+        >
+          {lifts.map((lift) => (
+            <LiftCard key={lift.name} lift={lift} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
