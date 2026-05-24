@@ -8,8 +8,19 @@ import { Badge } from '../components/ui/Badge';
 
 const MY_TELEGRAM_ID = 8041376316;
 
-const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'] as const;
-type MuscleFilter = typeof MUSCLE_GROUPS[number] | 'All';
+const SPLIT_TYPES = ['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'Full Body', 'Tanpa Split'] as const;
+type SplitFilter = typeof SPLIT_TYPES[number] | 'All';
+
+// Mapping dari label filter → nilai yang disimpan di database
+const SPLIT_VALUE_MAP: Record<string, string[]> = {
+  'Push':        ['push'],
+  'Pull':        ['pull'],
+  'Legs':        ['legs'],
+  'Upper':       ['upper'],
+  'Lower':       ['lower'],
+  'Full Body':   ['fullbody', 'full body', 'full_body'],
+  'Tanpa Split': ['none', 'tanpa split', 'tanpasplit', ''],
+};
 
 const DATE_FILTERS = [
   { label: 'Semua', value: 'all' },
@@ -41,22 +52,6 @@ function getDisplayName(raw: string | null | undefined): string {
   if (!raw) return "Workout Session";
   return WORKOUT_DISPLAY_NAME[raw.toLowerCase()] ?? raw;
 }
-
-const WORKOUT_MUSCLE_MAP: Record<string, string[]> = {
-  push:      ['Chest', 'Shoulders', 'Arms'],
-  pull:      ['Back', 'Arms'],
-  legs:      ['Legs', 'Core'],
-  upper:     ['Chest', 'Back', 'Shoulders'],
-  lower:     ['Legs', 'Core'],
-  chest:     ['Chest'],
-  back:      ['Back'],
-  shoulders: ['Shoulders'],
-  arms:      ['Arms'],
-  core:      ['Core'],
-  cardio:    [],
-  hiit:      ['Legs', 'Core'],
-  mobility:  ['Core'],
-};
 
 function formatDuration(minutes: number | null): string {
   if (!minutes) return '—';
@@ -112,10 +107,9 @@ export function WorkoutHistory() {
   const { logs, loading } = useWorkoutLogs(MY_TELEGRAM_ID);
   const { sessions, loading: sessionsLoading } = useRecentSessions(MY_TELEGRAM_ID);
 
-  const [muscleFilter, setMuscleFilter] = useState<MuscleFilter>('All');
+  const [splitFilter, setSplitFilter] = useState<SplitFilter>('All');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
-  // ✅ PINDAH KE SINI — semua useMemo harus sebelum return kondisional
   const filteredSessions = useMemo(() => {
     const cutoff = getDateCutoff(dateFilter);
     return sessions.filter((s) => {
@@ -123,26 +117,27 @@ export function WorkoutHistory() {
         const sessionDate = new Date(s.finished_at ?? s.started_at);
         if (sessionDate < cutoff) return false;
       }
-      if (muscleFilter !== 'All') {
-        const type = (s.split_name ?? s.name ?? '').toLowerCase();
-        const muscles = WORKOUT_MUSCLE_MAP[type] ?? [];
-        if (!muscles.includes(muscleFilter)) return false;
+      if (splitFilter !== 'All') {
+        const type = (s.split_name ?? s.name ?? '').toLowerCase().trim();
+        const allowed = SPLIT_VALUE_MAP[splitFilter] ?? [];
+        if (!allowed.includes(type)) return false;
       }
       return true;
     });
-  }, [sessions, muscleFilter, dateFilter]);
+  }, [sessions, splitFilter, dateFilter]);
 
   const filteredLogs = useMemo(() => {
     const cutoff = getDateCutoff(dateFilter);
     return logs.filter((log) => {
       if (cutoff && new Date(log.logged_at) < cutoff) return false;
-      if (muscleFilter !== 'All') {
-        const muscles = WORKOUT_MUSCLE_MAP[log.workout_type?.toLowerCase()] ?? [];
-        if (!muscles.includes(muscleFilter)) return false;
+      if (splitFilter !== 'All') {
+        const type = (log.workout_type ?? '').toLowerCase().trim();
+        const allowed = SPLIT_VALUE_MAP[splitFilter] ?? [];
+        if (!allowed.includes(type)) return false;
       }
       return true;
     });
-  }, [logs, muscleFilter, dateFilter]);
+  }, [logs, splitFilter, dateFilter]);
 
   const groupedByMonth = useMemo(() => {
     return filteredLogs.reduce<Record<string, typeof filteredLogs>>(
@@ -159,10 +154,9 @@ export function WorkoutHistory() {
     );
   }, [filteredLogs]);
 
-  // ✅ return kondisional setelah semua hooks
   if (loading) return <LoadingScreen />;
 
-  const hasActiveFilter = muscleFilter !== 'All' || dateFilter !== 'all';
+  const hasActiveFilter = splitFilter !== 'All' || dateFilter !== 'all';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -181,7 +175,7 @@ export function WorkoutHistory() {
 
         {hasActiveFilter && (
           <button
-            onClick={() => { setMuscleFilter('All'); setDateFilter('all'); }}
+            onClick={() => { setSplitFilter('All'); setDateFilter('all'); }}
             style={{
               fontSize: 10,
               fontFamily: "'Fira Code', monospace",
@@ -200,6 +194,7 @@ export function WorkoutHistory() {
 
       {/* ── Filters ──────────────────────────────────────── */}
       <div className="space-y-2">
+        {/* Filter tanggal */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {DATE_FILTERS.map((f) => (
             <FilterChip
@@ -211,18 +206,19 @@ export function WorkoutHistory() {
           ))}
         </div>
 
+        {/* Filter split */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <FilterChip
-            label="Semua Otot"
-            active={muscleFilter === 'All'}
-            onClick={() => setMuscleFilter('All')}
+            label="Semua"
+            active={splitFilter === 'All'}
+            onClick={() => setSplitFilter('All')}
           />
-          {MUSCLE_GROUPS.map((mg) => (
+          {SPLIT_TYPES.map((s) => (
             <FilterChip
-              key={mg}
-              label={mg}
-              active={muscleFilter === mg}
-              onClick={() => setMuscleFilter(mg)}
+              key={s}
+              label={s}
+              active={splitFilter === s}
+              onClick={() => setSplitFilter(s)}
             />
           ))}
         </div>
@@ -251,12 +247,12 @@ export function WorkoutHistory() {
             title="Tidak ada sesi yang cocok"
             description={
               hasActiveFilter
-                ? 'Coba ubah filter otot atau rentang tanggal.'
+                ? 'Coba ubah filter split atau rentang tanggal.'
                 : 'Mulai dengan /session start di bot.'
             }
             action={
               hasActiveFilter
-                ? { label: 'Reset Filter', onClick: () => { setMuscleFilter('All'); setDateFilter('all'); } }
+                ? { label: 'Reset Filter', onClick: () => { setSplitFilter('All'); setDateFilter('all'); } }
                 : undefined
             }
           />
@@ -331,7 +327,7 @@ export function WorkoutHistory() {
             icon="🔍"
             title="Tidak ada log yang cocok"
             description="Coba ubah filter untuk melihat lebih banyak."
-            action={{ label: 'Reset Filter', onClick: () => { setMuscleFilter('All'); setDateFilter('all'); } }}
+            action={{ label: 'Reset Filter', onClick: () => { setSplitFilter('All'); setDateFilter('all'); } }}
           />
         ) : (
           <EmptyState
@@ -413,7 +409,7 @@ function getWorkoutEmoji(type: string): string {
     cardio: '🏃', hiit: '⚡', core: '🎯',
     chest: '💥', back: '🏋️', shoulders: '🔝',
     arms: '💪', mobility: '🧘', rest: '😴',
-    upper: '⬆️', lower: '⬇️',
+    upper: '⬆️', lower: '⬇️', fullbody: '🔄',
   };
-  return map[type] ?? '🏋️';
+  return map[type?.toLowerCase()] ?? '🏋️';
 }
