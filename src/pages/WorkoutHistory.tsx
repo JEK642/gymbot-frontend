@@ -43,7 +43,7 @@ export function WorkoutHistory() {
             History
           </h1>
           <p className="text-xs text-element-muted font-mono mt-2">
-            {logs.length} sesi latihan total
+            {sessionsLoading ? '...' : sessions.length} sesi latihan total
           </p>
         </div>
       </div>
@@ -86,15 +86,23 @@ export function WorkoutHistory() {
                   "
                 >
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-display font-semibold text-element-primary text-sm uppercase tracking-wide">
                         {session.split_name ?? session.name ?? 'Workout Session'}
                       </p>
-                      <p className="text-[10px] font-mono text-element-muted mt-0.5 tracking-wide">
+                      {session.primary_exercises && session.primary_exercises.length > 0 && (
+                        <p className="text-[10px] font-mono text-element-muted mt-0.5 truncate">
+                          {session.primary_exercises.join(' · ')}
+                          {(session.exercise_count ?? 0) > 3 && (
+                            <span className="opacity-50"> +{(session.exercise_count ?? 0) - 3}</span>
+                          )}
+                        </p>
+                      )}
+                      <p className="text-[10px] font-mono text-element-muted mt-0.5 tracking-wide opacity-50">
                         {date}
                       </p>
                     </div>
-                    <span className="text-element-muted text-base leading-none mt-0.5">›</span>
+                    <span className="text-element-muted text-base leading-none mt-0.5 ml-2">›</span>
                   </div>
 
                   {/* Stats row */}

@@ -2,7 +2,7 @@ import { useWeightLogs } from '../hooks/useWeightLogs';
 import { useWorkoutLogs } from '../hooks/useWorkoutLogs';
 import { useStats } from '../hooks/useStats';
 import { useMuscleData } from '../hooks/useMuscleData';
-import { useBodyStats } from '../hooks/useBodyStats'; // ✅ TAMBAH INI
+import { useBodyStats } from '../hooks/useBodyStats';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 import MuscleRadarChart from '../components/dashboard/MuscleRadarChart';
 import ProgressionPreview from '../components/dashboard/Progressionpreview';
@@ -15,6 +15,16 @@ const MY_TELEGRAM_ID = 8041376316;
 function bmi(weight: number, height: number) {
   const h = height / 100;
   return (weight / (h * h)).toFixed(1);
+}
+
+function getBmiColor(category: string | null): string {
+  switch (category) {
+    case 'Normal':      return '#34C759'; // success green
+    case 'Overweight':  return '#EF9F27'; // warning yellow
+    case 'Obese':       return '#FF453A'; // danger red
+    case 'Underweight': return '#4B8EFF'; // accent blue
+    default:            return 'rgba(255,255,255,0.5)';
+  }
 }
 
 function SectionDivider({ label }: { label: string }) {
@@ -43,7 +53,7 @@ export function Dashboard() {
   const { logs: workoutLogs, loading: workoutLoading } = useWorkoutLogs(MY_TELEGRAM_ID);
   const stats = useStats(weightLogs, workoutLogs);
   const { data: muscleData, loading: muscleLoading } = useMuscleData(MY_TELEGRAM_ID);
-  const { stats: bodyStats, loading: bodyLoading } = useBodyStats(MY_TELEGRAM_ID); // ✅ TAMBAH INI
+  const { stats: bodyStats, loading: bodyLoading } = useBodyStats(MY_TELEGRAM_ID);
 
   const loading = weightLoading || workoutLoading || muscleLoading || bodyLoading;
 
@@ -112,7 +122,10 @@ export function Dashboard() {
 
         <div className="flex items-baseline gap-1.5">
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>BMI</span>
-          <span className="font-display font-bold text-accent text-xl">
+          <span
+            className="font-display font-bold text-xl"
+            style={{ color: getBmiColor(bmiCategory) }}
+          >
             {bmiValue ?? '—'}
           </span>
           {bmiCategory && (
@@ -123,7 +136,7 @@ export function Dashboard() {
 
       {/* ── Muscle Coverage Radar ─────────────── */}
       <SectionDivider label="Muscle Coverage" />
-      <MuscleRadarChart data={muscleData} /> {/* ✅ kirim data real */}
+      <MuscleRadarChart data={muscleData} />
 
       {/* ── Attendance Chart ──────────────────── */}
       <SectionDivider label="Gym Attendance" />

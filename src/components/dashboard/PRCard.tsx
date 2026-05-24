@@ -9,24 +9,34 @@ interface PRCardProps {
   loading: boolean;
 }
 
-// Badge warna untuk equipment type
+// Badge warna untuk equipment type (dark theme)
 function EquipmentBadge({ equipment }: { equipment: string | null }) {
-  const config: Record<string, { label: string; className: string }> = {
-    barbell: { label: 'Barbell', className: 'bg-orange-100 text-orange-700' },
-    dumbbell: { label: 'Dumbbell', className: 'bg-blue-100 text-blue-700' },
-    machine: { label: 'Machine', className: 'bg-purple-100 text-purple-700' },
-    bodyweight: { label: 'BW', className: 'bg-green-100 text-green-700' },
+  const config: Record<string, { label: string; color: string }> = {
+    barbell:    { label: 'Barbell',   color: 'rgba(239,159,39,0.15)'  },
+    dumbbell:   { label: 'Dumbbell',  color: 'rgba(75,142,255,0.15)'  },
+    machine:    { label: 'Machine',   color: 'rgba(175,82,222,0.15)'  },
+    bodyweight: { label: 'BW',        color: 'rgba(52,199,89,0.15)'   },
   };
 
   const key = equipment?.toLowerCase() ?? '';
   const badge = config[key] ?? {
     label: equipment ?? 'Other',
-    className: 'bg-gray-100 text-gray-600',
+    color: 'rgba(255,255,255,0.08)',
   };
 
   return (
     <span
-      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.className}`}
+      style={{
+        background: badge.color,
+        color: 'rgba(255,255,255,0.5)',
+        fontSize: 10,
+        fontWeight: 600,
+        fontFamily: "'Outfit', sans-serif",
+        letterSpacing: '0.06em',
+        padding: '2px 7px',
+        borderRadius: 99,
+        textTransform: 'uppercase',
+      }}
     >
       {badge.label}
     </span>
@@ -36,14 +46,18 @@ function EquipmentBadge({ equipment }: { equipment: string | null }) {
 // Skeleton loader untuk state loading
 function PRSkeleton() {
   return (
-    <div className="animate-pulse space-y-3">
+    <div className="animate-pulse space-y-2">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+        <div
+          key={i}
+          className="flex items-center justify-between p-3 rounded-xl"
+          style={{ background: '#0D0E14', border: '1px solid #181B26' }}
+        >
           <div className="space-y-2">
-            <div className="h-4 w-32 bg-gray-200 rounded" />
-            <div className="h-3 w-20 bg-gray-100 rounded" />
+            <div className="h-3.5 w-32 rounded" style={{ background: '#1E2130' }} />
+            <div className="h-2.5 w-20 rounded" style={{ background: '#181B26' }} />
           </div>
-          <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+          <div className="h-8 w-20 rounded-lg" style={{ background: '#1E2130' }} />
         </div>
       ))}
     </div>
@@ -51,19 +65,39 @@ function PRSkeleton() {
 }
 
 export default function PRCard({ prs, loading }: PRCardProps) {
-  // Hanya tampilkan 5 PR teratas di dashboard
   const topPRs = prs.slice(0, 5);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <div
+      className="rounded-2xl p-5"
+      style={{ background: '#0D0E14', border: '1px solid #181B26' }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🏆</span>
-          <h3 className="font-bold text-gray-800 text-base">Personal Records</h3>
+          <span className="text-lg leading-none">🏆</span>
+          <h3
+            style={{
+              fontFamily: "'Syne', sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
+              color: 'rgba(255,255,255,0.9)',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Personal Records
+          </h3>
         </div>
         {!loading && prs.length > 5 && (
-          <span className="text-xs text-gray-400">{prs.length} total</span>
+          <span
+            style={{
+              fontSize: 10,
+              fontFamily: "'Fira Code', monospace",
+              color: 'rgba(255,255,255,0.3)',
+            }}
+          >
+            {prs.length} total
+          </span>
         )}
       </div>
 
@@ -71,60 +105,95 @@ export default function PRCard({ prs, loading }: PRCardProps) {
       {loading ? (
         <PRSkeleton />
       ) : topPRs.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="text-4xl mb-2">💪</div>
-          <p className="text-sm text-gray-500 font-medium">Belum ada PR</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Mulai latihan untuk catat rekor pertamamu!
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3"
+            style={{ background: 'rgba(75,142,255,0.08)', border: '1px solid rgba(75,142,255,0.15)' }}
+          >
+            💪
+          </div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', fontFamily: "'Outfit', sans-serif" }}>
+            Belum ada PR
+          </p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: "'Fira Code', monospace", marginTop: 4 }}>
+            Kirim /session start di bot untuk mulai
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {topPRs.map((pr, index) => {
             const achievedDate = new Date(pr.achieved_at).toLocaleDateString(
               'id-ID',
-              { day: 'numeric', month: 'short' }
+              { day: 'numeric', month: 'short', year: 'numeric' }
             );
 
             return (
               <div
                 key={pr.id}
-                className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-3 rounded-xl transition-colors"
+                style={{ border: '1px solid transparent' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {/* Rank + Exercise Info */}
                 <div className="flex items-center gap-3 min-w-0">
-                  {/* Rank badge — gold untuk #1 */}
-                  <span
-                    className={`text-sm font-black w-6 text-center flex-shrink-0 ${
-                      index === 0
-                        ? 'text-amber-500'
-                        : index === 1
-                        ? 'text-gray-400'
-                        : index === 2
-                        ? 'text-amber-700'
-                        : 'text-gray-300'
-                    }`}
-                  >
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                  {/* Rank badge */}
+                  <span className="text-sm w-6 text-center flex-shrink-0">
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (
+                      <span style={{ fontFamily: "'Fira Code', monospace", fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 700 }}>
+                        #{index + 1}
+                      </span>
+                    )}
                   </span>
 
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-800 text-sm truncate">
+                    <p
+                      className="truncate"
+                      style={{
+                        fontFamily: "'Syne', sans-serif",
+                        fontWeight: 600,
+                        fontSize: 13,
+                        color: 'rgba(255,255,255,0.85)',
+                      }}
+                    >
                       {pr.exercise_name}
                     </p>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <EquipmentBadge equipment={pr.equipment} />
-                      <span className="text-xs text-gray-400">{achievedDate}</span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontFamily: "'Fira Code', monospace",
+                          color: 'rgba(255,255,255,0.25)',
+                        }}
+                      >
+                        {achievedDate}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* PR Stats */}
-                <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-gray-900 text-sm">
+                <div className="text-right flex-shrink-0 ml-3">
+                  <p
+                    style={{
+                      fontFamily: "'Fira Code', monospace",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: 'rgba(255,255,255,0.9)',
+                    }}
+                  >
                     {pr.weight_kg}kg × {pr.reps}
                   </p>
-                  <p className="text-xs text-indigo-600 font-semibold">
+                  <p
+                    style={{
+                      fontFamily: "'Fira Code', monospace",
+                      fontSize: 10,
+                      color: '#4B8EFF',
+                      fontWeight: 600,
+                      marginTop: 2,
+                    }}
+                  >
                     1RM ~{pr.estimated_1rm}kg
                   </p>
                 </div>

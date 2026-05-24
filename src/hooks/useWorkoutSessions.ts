@@ -6,8 +6,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 // ── TYPES ────────────────────────────────────────────────────
-// Definisikan lokal agar tidak perlu import dari backend types
-// (frontend punya type-nya sendiri yang fokus ke display)
 
 export interface SessionSummary {
   id: string;
@@ -21,6 +19,7 @@ export interface SessionSummary {
   exercise_count?: number;
   total_sets?: number;
   total_volume?: number;
+  primary_exercises?: string[]; // nama 2-3 exercise pertama di sesi
 }
 
 export interface SessionExerciseDisplay {
@@ -85,14 +84,17 @@ export function useRecentSessions(telegramId: number | null, limit = 20) {
         // Hitung stats tambahan per session
         const sessionsWithStats = await Promise.all(
           (data ?? []).map(async (s: any) => {
-            // Hitung jumlah exercise dan total volume
+            // Fetch exercises — ambil nama sekalian untuk primary_exercises
             const { data: exercises } = await supabase
               .from('session_exercises')
               .select(`
                 id,
+                exercise_order,
+                exercises(name),
                 exercise_sets(weight_kg, reps)
               `)
-              .eq('session_id', s.id);
+              .eq('session_id', s.id)
+              .order('exercise_order', { ascending: true });
 
             let total_sets = 0;
             let total_volume = 0;
@@ -107,12 +109,19 @@ export function useRecentSessions(telegramId: number | null, limit = 20) {
               );
             }
 
+            // Ambil nama 3 exercise pertama untuk subtitle
+            const primary_exercises = (exercises ?? [])
+              .slice(0, 3)
+              .map((ex: any) => ex.exercises?.name)
+              .filter(Boolean) as string[];
+
             return {
               ...s,
               split_name: (s as any).splits?.name ?? null,
               exercise_count: exercises?.length ?? 0,
               total_sets,
               total_volume,
+              primary_exercises,
             };
           })
         );
@@ -209,6 +218,7 @@ export function useSessionDetail(sessionId: string | null) {
           exercise_count: exercises.length,
           total_sets,
           total_volume,
+          primary_exercises: exercises.slice(0, 3).map(e => e.exercise_name),
           exercises,
         });
       } catch (err: any) {
@@ -253,7 +263,6 @@ export function useVolumeHistory(telegramId: number | null) {
               .select('weight_kg, reps, session_exercise_id')
               .in(
                 'session_exercise_id',
-                // Subquery workaround: ambil session_exercise IDs dulu
                 (
                   await supabase
                     .from('session_exercises')
