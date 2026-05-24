@@ -19,6 +19,29 @@ const DATE_FILTERS = [
 ] as const;
 type DateFilter = typeof DATE_FILTERS[number]['value'];
 
+const WORKOUT_DISPLAY_NAME: Record<string, string> = {
+  push:      "Push Day",
+  pull:      "Pull Day",
+  legs:      "Leg Day",
+  upper:     "Upper Body",
+  lower:     "Lower Body",
+  fullbody:  "Full Body",
+  chest:     "Chest Day",
+  back:      "Back Day",
+  shoulders: "Shoulder Day",
+  arms:      "Arm Day",
+  core:      "Core Day",
+  cardio:    "Cardio",
+  hiit:      "HIIT",
+  mobility:  "Mobility",
+  rest:      "Rest Day",
+};
+
+function getDisplayName(raw: string | null | undefined): string {
+  if (!raw) return "Workout Session";
+  return WORKOUT_DISPLAY_NAME[raw.toLowerCase()] ?? raw;
+}
+
 const WORKOUT_MUSCLE_MAP: Record<string, string[]> = {
   push:      ['Chest', 'Shoulders', 'Arms'],
   pull:      ['Back', 'Arms'],
@@ -255,7 +278,7 @@ export function WorkoutHistory() {
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <p className="font-display font-semibold text-element-primary text-sm uppercase tracking-wide">
-                        {session.split_name ?? session.name ?? 'Workout Session'}
+                        getDisplayName(session.split_name ?? session.name)
                       </p>
                       {session.primary_exercises && session.primary_exercises.length > 0 && (
                         <p className="text-[10px] font-mono text-element-muted mt-0.5 truncate">
