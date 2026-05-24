@@ -17,15 +17,6 @@ interface MuscleRadarChartProps {
   data?: MuscleData[];
 }
 
-const defaultData: MuscleData[] = [
-  { muscle: "Chest", sets: 42, fullMark: 60 },
-  { muscle: "Back", sets: 55, fullMark: 60 },
-  { muscle: "Legs", sets: 38, fullMark: 60 },
-  { muscle: "Shoulders", sets: 30, fullMark: 60 },
-  { muscle: "Arms", sets: 48, fullMark: 60 },
-  { muscle: "Core", sets: 22, fullMark: 60 },
-];
-
 const CustomTooltip = ({
   active,
   payload,
@@ -107,7 +98,10 @@ const CustomAngleAxis = (props: {
   );
 };
 
-export default function MuscleRadarChart({ data = defaultData }: MuscleRadarChartProps) {
+export default function MuscleRadarChart({ data = [] }: MuscleRadarChartProps) {
+  // ✅ Kalau belum ada data workout bulan ini, tampilkan empty state
+  const hasData = data.some((d) => d.sets > 0);
+
   return (
     <div className="card p-5 flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -148,46 +142,84 @@ export default function MuscleRadarChart({ data = defaultData }: MuscleRadarChar
         </span>
       </div>
 
-      <div style={{ height: "260px" }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={data} cx="50%" cy="50%" outerRadius="75%">
-            <PolarGrid
-              stroke="rgba(255,255,255,0.06)"
-              strokeDasharray="0"
-            />
-            <PolarAngleAxis
-              dataKey="muscle"
-              tick={CustomAngleAxis as unknown as boolean}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Radar
-              name="Sets"
-              dataKey="sets"
-              stroke="#4B8EFF"
-              strokeWidth={2}
-              fill="#4B8EFF"
-              fillOpacity={0.12}
-              dot={{
-                r: 3,
-                fill: "#4B8EFF",
-                strokeWidth: 0,
-              }}
-              activeDot={{
-                r: 5,
-                fill: "#4B8EFF",
-                stroke: "rgba(75,142,255,0.3)",
-                strokeWidth: 4,
-              }}
-            />
-            <Tooltip content={<CustomTooltip />} />
-          </RadarChart>
-        </ResponsiveContainer>
-      </div>
+      {/* ✅ Empty state kalau belum ada workout */}
+      {!hasData ? (
+        <div
+          style={{
+            height: "260px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+          }}
+        >
+          <span style={{ fontSize: "32px" }}>🏋️</span>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.25)",
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: "13px",
+              margin: 0,
+              textAlign: "center",
+            }}
+          >
+            Belum ada workout bulan ini
+          </p>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.15)",
+              fontFamily: "'Fira Code', monospace",
+              fontSize: "11px",
+              margin: 0,
+            }}
+          >
+            Log workout via bot Telegram kamu
+          </p>
+        </div>
+      ) : (
+        <div style={{ height: "260px" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={data} cx="50%" cy="50%" outerRadius="75%">
+              <PolarGrid
+                stroke="rgba(255,255,255,0.06)"
+                strokeDasharray="0"
+              />
+              <PolarAngleAxis
+                dataKey="muscle"
+                tick={CustomAngleAxis as unknown as boolean}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Radar
+                name="Sets"
+                dataKey="sets"
+                stroke="#4B8EFF"
+                strokeWidth={2}
+                fill="#4B8EFF"
+                fillOpacity={0.12}
+                dot={{
+                  r: 3,
+                  fill: "#4B8EFF",
+                  strokeWidth: 0,
+                }}
+                activeDot={{
+                  r: 5,
+                  fill: "#4B8EFF",
+                  stroke: "rgba(75,142,255,0.3)",
+                  strokeWidth: 4,
+                }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
+      {/* Progress bars bawah — tetap tampil biar tau muscle mana yg 0 */}
       <div className="grid grid-cols-3 gap-2">
         {data.map((d) => {
-          const pct = Math.round((d.sets / d.fullMark) * 100);
+          const pct = d.fullMark > 0 ? Math.round((d.sets / d.fullMark) * 100) : 0;
           return (
             <div
               key={d.muscle}
