@@ -278,7 +278,7 @@ export function WorkoutHistory() {
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <p className="font-display font-semibold text-element-primary text-sm uppercase tracking-wide">
-                        getDisplayName(session.split_name ?? session.name)
+                        {getDisplayName(session.split_name ?? session.name)}
                       </p>
                       {session.primary_exercises && session.primary_exercises.length > 0 && (
                         <p className="text-[10px] font-mono text-element-muted mt-0.5 truncate">
