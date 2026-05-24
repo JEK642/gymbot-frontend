@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+/* ── Custom Theme Tokens ─────────────────────── */
+:root {
+  /* Background / Surface */
+  --color-slate-950: #0A0B0F;
+  --color-slate-900: #0D0E14;
+  --color-slate-800: #161921;
+  --color-slate-700: #1C2030;
+
+  /* Accent — Athletic Blue */
+  --color-accent: #4B8EFF;
+  --color-accent-light: #6FA3FF;
+  --color-accent-dim: #2D5FCC;
+  --color-accent-subtle: #111827;
+
+  /* Text Hierarchy */
+  --color-element-primary: #EDF0F7;
+  --color-element-secondary: #7A8299;
+  --color-element-muted: #3D4460;
+  --color-element-blue: #4B8EFF;
+
+  /* Border System */
+  --color-outline: #1E2235;
+  --color-outline-subtle: #141726;
+  --color-outline-strong: #2A3050;
+  --color-outline-blue: #2B4080;
+
+  /* Status / Signal Colors */
+  --color-signal-high: #FF5C5C;
+  --color-signal-medium: #FF9F43;
+  --color-signal-low: #2ED87F;
+  --color-signal-neutral: #4B8EFF;
+
+  /* Typography */
+  --font-display: "Syne", sans-serif;
+  --font-body: "Outfit", sans-serif;
+  --font-mono: "Fira Code", monospace;
+
+  /* Border Radius */
+  --radius-card: 14px;
+  --radius-pill: 999px;
+
+  /* Animations */
+  --animate-fade-in: fadeIn 0.3s ease-out;
+  --animate-slide-up: slideUp 0.35s ease-out;
+  --animate-slide-in: slideIn 0.3s ease-out;
+  --animate-pulse-blue: pulseBlue 2.5s infinite;
+}
+
+/* ── Keyframes ───────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseBlue {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+/* ── Base Reset ───────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #0A0B0F;
+    color: #EDF0F7;
+    font-family: 'Outfit', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(75,142,255,0.05) 0%, transparent 60%);
+  }
+
+  ::-webkit-scrollbar       { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #1E2235;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #2A3050; }
+}
+
+/* ── Component Utilities ─────────────────────── */
+@layer components {
+
+  .card {
+    background-color: #0D0E14;
+    border: 1px solid #181B26;
+    border-radius: 14px;
+    padding: 1.375rem 1.5rem;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    transition: border-color 0.15s;
+  }
+
+  .card:hover {
+    border-color: #2A3050;
+  }
+
+  .card-accent {
+    background-color: #0D0E14;
+    border: 1px solid #1E3060;
+    border-radius: 14px;
+    padding: 1.375rem 1.5rem;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.03),
+      0 0 0 1px rgba(75,142,255,0.08),
+      0 4px 20px rgba(75,142,255,0.05);
+  }
+
+  .label-xs {
+    font-size: 0.625rem;
+    font-family: 'Fira Code', monospace;
+    color: #3D4460;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    font-family: 'Fira Code', monospace;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  .stat-number {
+    font-family: 'Syne', sans-serif;
+    color: #EDF0F7;
+    line-height: 1;
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    letter-spacing: -0.02em;
+  }
+
+  .blue-glow {
+    box-shadow: 0 0 20px rgba(75,142,255,0.1);
+  }
+
+  .divider {
+    border-top: 1px solid #181B26;
+    margin: 1rem 0;
+  }
+
+  .hover-row {
+    border-radius: 8px;
+    transition: background-color 0.1s;
+  }
+  .hover-row:hover {
+    background-color: #161921;
+  }
+}
+
+/* ── Animation Delay Utilities ───────────────── */
+@layer utilities {
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+}
