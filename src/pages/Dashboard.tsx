@@ -8,8 +8,8 @@ import MuscleRadarChart from '../components/dashboard/MuscleRadarChart';
 import ProgressionPreview from '../components/dashboard/Progressionpreview';
 import RecentWorkouts from '../components/dashboard/Recentworkouts';
 import AttendanceChart from '../components/dashboard/AttendanceChart';
+import WeeklySummaryCard from '../components/dashboard/WeeklySummaryCard';
 
-// ⚠️ Ganti dengan Telegram ID kamu
 const MY_TELEGRAM_ID = 8041376316;
 
 function bmi(weight: number, height: number) {
@@ -19,10 +19,10 @@ function bmi(weight: number, height: number) {
 
 function getBmiColor(category: string | null): string {
   switch (category) {
-    case 'Normal':      return '#34C759'; // success green
-    case 'Overweight':  return '#EF9F27'; // warning yellow
-    case 'Obese':       return '#FF453A'; // danger red
-    case 'Underweight': return '#4B8EFF'; // accent blue
+    case 'Normal':      return '#34C759';
+    case 'Overweight':  return '#EF9F27';
+    case 'Obese':       return '#FF453A';
+    case 'Underweight': return '#4B8EFF';
     default:            return 'rgba(255,255,255,0.5)';
   }
 }
@@ -61,7 +61,6 @@ export function Dashboard() {
 
   if (loading) return <LoadingScreen />;
 
-  // BMI hanya dihitung kalau kedua data tersedia
   const bmiValue = bodyStats.weight && bodyStats.height
     ? bmi(bodyStats.weight, bodyStats.height)
     : null;
@@ -95,6 +94,14 @@ export function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* ── Weekly Summary + Progress Ring ───── */}
+      <WeeklySummaryCard
+        weeklyWorkouts={stats.weeklyWorkouts}
+        weeklyTarget={4}
+        currentStreak={stats.currentStreak}
+        totalWorkouts={stats.totalWorkouts}
+      />
 
       {/* ── Body Stats Row ────────────────────── */}
       <div className="flex items-center gap-4 px-4 py-3 rounded-xl"
