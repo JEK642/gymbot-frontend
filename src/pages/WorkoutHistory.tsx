@@ -19,7 +19,6 @@ const DATE_FILTERS = [
 ] as const;
 type DateFilter = typeof DATE_FILTERS[number]['value'];
 
-// Map workout_type → muscle groups (sama seperti di Dashboard)
 const WORKOUT_MUSCLE_MAP: Record<string, string[]> = {
   push:      ['Chest', 'Shoulders', 'Arms'],
   pull:      ['Back', 'Arms'],
@@ -53,7 +52,6 @@ function getDateCutoff(filter: DateFilter): Date | null {
   return d;
 }
 
-// Filter chip component
 function FilterChip({
   label,
   active,
@@ -94,18 +92,14 @@ export function WorkoutHistory() {
   const [muscleFilter, setMuscleFilter] = useState<MuscleFilter>('All');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
-  if (loading) return <LoadingScreen />;
-
-  // Filter sessions
+  // ✅ PINDAH KE SINI — semua useMemo harus sebelum return kondisional
   const filteredSessions = useMemo(() => {
     const cutoff = getDateCutoff(dateFilter);
     return sessions.filter((s) => {
-      // Date filter
       if (cutoff) {
         const sessionDate = new Date(s.finished_at ?? s.started_at);
         if (sessionDate < cutoff) return false;
       }
-      // Muscle filter — pakai split_name/name untuk mapping
       if (muscleFilter !== 'All') {
         const type = (s.split_name ?? s.name ?? '').toLowerCase();
         const muscles = WORKOUT_MUSCLE_MAP[type] ?? [];
@@ -115,7 +109,6 @@ export function WorkoutHistory() {
     });
   }, [sessions, muscleFilter, dateFilter]);
 
-  // Filter logs (workout_logs lama)
   const filteredLogs = useMemo(() => {
     const cutoff = getDateCutoff(dateFilter);
     return logs.filter((log) => {
@@ -128,18 +121,23 @@ export function WorkoutHistory() {
     });
   }, [logs, muscleFilter, dateFilter]);
 
-  const groupedByMonth = filteredLogs.reduce<Record<string, typeof filteredLogs>>(
-    (acc, log) => {
-      const monthKey = new Date(log.logged_at).toLocaleDateString('id-ID', {
-        month: 'long',
-        year: 'numeric',
-      });
-      if (!acc[monthKey]) acc[monthKey] = [];
-      acc[monthKey].push(log);
-      return acc;
-    },
-    {}
-  );
+  const groupedByMonth = useMemo(() => {
+    return filteredLogs.reduce<Record<string, typeof filteredLogs>>(
+      (acc, log) => {
+        const monthKey = new Date(log.logged_at).toLocaleDateString('id-ID', {
+          month: 'long',
+          year: 'numeric',
+        });
+        if (!acc[monthKey]) acc[monthKey] = [];
+        acc[monthKey].push(log);
+        return acc;
+      },
+      {}
+    );
+  }, [filteredLogs]);
+
+  // ✅ return kondisional setelah semua hooks
+  if (loading) return <LoadingScreen />;
 
   const hasActiveFilter = muscleFilter !== 'All' || dateFilter !== 'all';
 
@@ -158,7 +156,6 @@ export function WorkoutHistory() {
           </p>
         </div>
 
-        {/* Reset filter button */}
         {hasActiveFilter && (
           <button
             onClick={() => { setMuscleFilter('All'); setDateFilter('all'); }}
@@ -180,7 +177,6 @@ export function WorkoutHistory() {
 
       {/* ── Filters ──────────────────────────────────────── */}
       <div className="space-y-2">
-        {/* Date filters */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {DATE_FILTERS.map((f) => (
             <FilterChip
@@ -192,7 +188,6 @@ export function WorkoutHistory() {
           ))}
         </div>
 
-        {/* Muscle group filters */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <FilterChip
             label="Semua Otot"
@@ -215,13 +210,7 @@ export function WorkoutHistory() {
         <div className="flex items-center gap-3 mb-4">
           <h2 className="label-xs">Sesi Latihan</h2>
           {hasActiveFilter && !sessionsLoading && (
-            <span
-              style={{
-                fontSize: 10,
-                fontFamily: "'Fira Code', monospace",
-                color: 'rgba(255,255,255,0.25)',
-              }}
-            >
+            <span style={{ fontSize: 10, fontFamily: "'Fira Code', monospace", color: 'rgba(255,255,255,0.25)' }}>
               {filteredSessions.length} hasil
             </span>
           )}
@@ -230,10 +219,7 @@ export function WorkoutHistory() {
         {sessionsLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-20 bg-[#0D0E14] border border-[#181B26] rounded-[14px] animate-pulse"
-              />
+              <div key={i} className="h-20 bg-[#0D0E14] border border-[#181B26] rounded-[14px] animate-pulse" />
             ))}
           </div>
         ) : filteredSessions.length === 0 ? (
@@ -264,11 +250,7 @@ export function WorkoutHistory() {
                 <button
                   key={session.id}
                   onClick={() => navigate(`/sessions/${session.id}`)}
-                  className="
-                    card w-full text-left
-                    hover:border-outline-strong hover:bg-slate-700/30
-                    transition-all duration-150
-                  "
+                  className="card w-full text-left hover:border-outline-strong hover:bg-slate-700/30 transition-all duration-150"
                 >
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
@@ -290,7 +272,6 @@ export function WorkoutHistory() {
                     <span className="text-element-muted text-base leading-none mt-0.5 ml-2">›</span>
                   </div>
 
-                  {/* Stats row */}
                   <div className="flex gap-6 mt-3">
                     <div>
                       <p className="label-xs mb-1">Durasi</p>
@@ -323,7 +304,6 @@ export function WorkoutHistory() {
       {/* ── Workout Log (grouped by month) ───────────────── */}
       {filteredLogs.length === 0 ? (
         logs.length > 0 ? (
-          // Ada data tapi difilter semua
           <EmptyState
             icon="🔍"
             title="Tidak ada log yang cocok"
@@ -341,36 +321,21 @@ export function WorkoutHistory() {
         <div className="space-y-8">
           {Object.entries(groupedByMonth).map(([month, monthLogs]) => (
             <div key={month}>
-              {/* Month header */}
               <div className="flex items-center gap-3 mb-3">
                 <h2 className="label-xs">{month}</h2>
-                <div className="
-                  text-[10px] font-mono text-element-muted
-                  bg-[#0D0E14] border border-[#181B26]
-                  px-2 py-0.5 rounded-pill
-                ">
+                <div className="text-[10px] font-mono text-element-muted bg-[#0D0E14] border border-[#181B26] px-2 py-0.5 rounded-pill">
                   {monthLogs.length} sesi
                 </div>
               </div>
 
-              {/* Cards */}
               <div className="space-y-2">
                 {monthLogs.map((workout) => (
                   <div
                     key={workout.id}
-                    className="
-                      card flex items-start justify-between gap-4
-                      hover:border-outline-strong hover:bg-slate-700/20
-                      transition-all duration-150 cursor-default
-                    "
+                    className="card flex items-start justify-between gap-4 hover:border-outline-strong hover:bg-slate-700/20 transition-all duration-150 cursor-default"
                   >
-                    {/* Left */}
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="
-                        w-9 h-9 rounded-lg shrink-0 mt-0.5
-                        bg-accent-subtle border border-accent/12
-                        flex items-center justify-center text-sm
-                      ">
+                      <div className="w-9 h-9 rounded-lg shrink-0 mt-0.5 bg-accent-subtle border border-accent/12 flex items-center justify-center text-sm">
                         {getWorkoutEmoji(workout.workout_type)}
                       </div>
 
@@ -403,7 +368,6 @@ export function WorkoutHistory() {
                       </div>
                     </div>
 
-                    {/* Right: time */}
                     <span className="text-[10px] font-mono text-element-muted shrink-0 mt-0.5">
                       {new Date(workout.logged_at).toLocaleTimeString('id-ID', {
                         hour: '2-digit', minute: '2-digit',
